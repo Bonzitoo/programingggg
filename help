@@ -1,0 +1,60 @@
+//podesavanje.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Zadatak 1</h1>
+    <form action="podesavanja.php" method="post">
+    <select name="bpoz" id="bpoz">
+    <option value="null">--Izaberi boju pozadine--</option>
+    <option value="red">Crvena</option>
+    <option value="green">Zelena</option>
+    <option value="blue">Plava</option>
+    <option value="yellow">Zuta</option>
+    </select><br><br>
+    <select name="bslova" id="bslova">
+    <option value="null">--Izaberi boju slova--</option>
+    <option value="red">Crvena</option>
+    <option value="green">Zelena</option>
+    <option value="blue">Plava</option>
+    <option value="yellow">Zuta</option>
+    </select><br><br>
+    <button id="btn" name="btn">Posalji</button><br><br>
+    </form>
+    <?php
+    if(isset($_POST['btn'])){
+
+        $bpoz=$_POST['bpoz'];
+        $bslova=$_POST['bslova'];
+
+        if($bpoz!="null" && $bslova!="null"){
+            setcookie("bpoz",$bpoz,time()+84600,"/");
+            setcookie("bslova",$bslova,time()+84600,"/");
+        }
+        else{
+            setcookie("bpoz",$bpoz,time()-1,"/");
+            setcookie("bslova",$bslova,time()-1,"/");
+        }
+
+    }
+    ?>
+</body>
+</html>
+
+//prikazi.php
+<?php
+
+if(isset($_COOKIE['bpoz']) && isset($_COOKIE['bslova'])){
+
+
+    $bpoz=$_COOKIE['bpoz'];
+    $bslova=$_COOKIE['bslova'];
+
+    echo "<body style='background-color:$bpoz'>";
+    echo "<div style='color:$bslova'>Ovo je tekst</div>";
+}
+?>
