@@ -1,0 +1,48 @@
+//index.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Zadatak 3</h1>
+    <?php
+    
+    $db=mysqli_connect("localhost","root","","pva_kolokvijum");
+    mysqli_query($db,"SET NAMES utf8");
+
+    $upit="SELECT * FROM  proizvodi";
+    $red=mysqli_query($db,$upit);
+
+    while($rez=mysqli_fetch_array($red,MYSQLI_ASSOC)){
+        echo "{$rez['id']} {$rez['naziv']} {$rez['tekst']} {$rez['kategorija']} {$rez['cena']} {$rez['kolicina']}<br>";
+    }
+    
+    ?>
+</body>
+</html>
+
+
+//index2.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <?php
+        $db=mysqli_connect("localhost","root","","pva_vezba");
+
+        $upit="SELECT * FROM korisnici";
+        $red=mysqli_query($db,$upit);
+        
+        while($rez=mysqli_fetch_array($red,MYSQLI_ASSOC)){
+            echo "{$rez['id']} | {$rez['ime']} | {$rez['prezime']} | {$rez['status']} | {$rez['email']} | {$rez['lozinka']}<br>";
+        }
+    ?>
+</body>
+</html>
