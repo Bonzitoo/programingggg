@@ -1,0 +1,141 @@
+//index.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Zadatak 4</h1>
+    <form action="index.php" method="post">
+    <select name="boja" id="boja">
+    <option value="null">--Izaberi boju--</option>
+    <option value="red">Crvena</option>
+    <option value="green">Zelena</option>
+    <option value="blue">Plava</option>
+    <option value="yellow">Zuta</option>
+    </select><br><br>
+    <select name="broj" id="broj">
+    <option value="null">--Izaberi broj--</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    </select><br><br>
+    <button id="btn" name="btn" type="button" onclick="obrada()">Posalji</button><br><br>
+    </form>
+    <div style="width:700px;height:200px;">
+    <div style="width:200px;height:200px;border:1px solid black; float:left;" id="1"></div>
+    <div style="width:200px;height:200px;border:1px solid black; float:left;" id="2"></div>
+    <div style="width:200px;height:200px;border:1px solid black; float:left;" id="3"></div>
+    </div>
+</body>
+</html>
+<script>
+function obrada(){
+    let boja=document.getElementById("boja").value;
+    let broj=document.getElementById("broj").value;
+    let div1=document.getElementById("1");
+    let div2=document.getElementById("2");
+    let div3=document.getElementById("3");
+
+    if(boja!="null" && broj!="null"){
+        if(broj=="1"){
+            div1.style.backgroundColor = boja;
+        }
+        if(broj=="2"){
+            div2.style.backgroundColor = boja;
+        }
+        if(broj=="3"){
+            div3.style.backgroundColor = boja;
+        } 
+    }
+    else{
+        div1.style.backgroundColor = "white";
+        div2.style.backgroundColor = "white";
+        div3.style.backgroundColor = "white";
+    }
+}
+</script>
+
+
+
+//ajaxbrisanje.php
+<?php
+
+$odgovor="";
+if(isset($_POST['id'])){
+
+    $id=$_POST['id'];
+
+    $db=mysqli_connect("localhost","root","","pva_kolokvijum");
+    mysqli_query($db,"SET NAMES utf8");
+
+    $upit="DELETE FROM proizvodi WHERE id='$id'";
+    $red=mysqli_query($db,$upit);
+
+    if($red){
+        $odgovor="Uspesno izbrisan proizvod!!";
+    }
+}
+echo $odgovor;
+?>
+
+
+//brisanje.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <h1>Zadatak 5</h1>
+    <form action="brisanje.php" method="post">
+
+    <select name="idproizvoda" id="idproizvoda">
+    <option value="null">--Izaberi proizvod--</option>
+    <?php
+    
+    $db=mysqli_connect("localhost","root","","pva_kolokvijum");
+    mysqli_query($db,"SET NAMES utf8");
+
+    $upit="SELECT * FROM  proizvodi";
+    $red=mysqli_query($db,$upit);
+
+    while($rez=mysqli_fetch_array($red,MYSQLI_ASSOC)){
+        echo "<option value='{$rez['id']}'>{$rez['naziv']}</option>";
+    }
+    
+    ?>
+    </select><br><br>
+    <button id="btn" name="btn" type="button">Posalji</button>
+    </form>
+</body>
+</html>
+
+<script>
+$(document).ready(function(){
+    $("#btn").click(function(){
+
+        let id=$("#idproizvoda").val();
+        if(id!="null"){
+
+            if(confirm("Da li ste sigurni da hocete da obrisete?")){
+
+                $.post("ajax_brisanje.php",{id: id},function(response){
+                    alert(response);
+                })      
+            }
+        }
+        else{
+
+            alert("Niste izabrali proizvod!");
+        }
+    })
+
+});
+</script>
