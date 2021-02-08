@@ -1,0 +1,494 @@
+//index.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Početna</title>
+    <script src='js/jquery-3.4.1.js'></script>
+    <script src='js/index.js'></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(login() AND isset($_GET['odjava']))
+{
+    Log::upisiLog("logovi/logovanje.txt", "Odjava korisnika '{$_SESSION['ime']}'");
+    odjaviKorisnika();
+}
+if(login())
+    prikaziPodatke();
+else
+{
+    ?>
+    <div class='podaciPrijava'>
+        <input type="text" name='korime' id='korime' placeholder="Unesite korisničko ime"/> 
+        <input type="text" name='lozinka' id='lozinka' placeholder="Unesite lozinku"/> 
+        <button type='button' id='dugmeZaPrijavu'>Prijavite se</button><br>
+        <div id="odgovor"></div>
+    </div>
+    <?php
+}
+?>
+<h1>VIŠER - Najnovije vesti</h1>
+<?php
+$upit="SELECT * FROM vwvesti order by id DESC";
+if(isset($_GET['kategorija'])) 
+    $upit="SELECT * FROM vwvesti WHERE idKategorije=".$_GET['kategorija']." order by id DESC";
+$rez=$db->query($upit);
+if($db->num_rows($rez)>0)
+{
+    while($red=$db->fetch_object($rez))
+    {
+        $klasa="prikazVesti";
+        if(login())$klasa="prikazVestiPrijavljen";
+        echo "<div class='$klasa'>";
+        if(login()){
+            echo "<a href='index.php?kategorija=$red->idKategorije'>$red->nazivKategorije</a><br>";
+        }
+        $naslov=$red->naslov;
+        if(login())$naslov="<a href='vest.php?id=$red->id'>$naslov</a>";
+        echo "<h2>$naslov</h2>";
+        if(login()){
+            $sve=explode(" ", $red->tekst);
+            $niz=array_splice($sve, 0, 75);
+            $tekst=implode(" ", $niz);
+            echo "$tekst .....<br>";
+            echo "<b>$red->ime $red->prezime</b><br>";
+        }
+        echo date("d.m.Y H:i", strtotime($red->vreme))."<br>";
+        echo "Broj pregleda: $red->brojPregleda<br>";
+        echo "<br>";
+        echo "</div>";
+    }
+}
+else
+    echo "Nema ni jedna vest u bazi";
+?>
+</body>
+</html>
+
+
+//vest.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vesti</title>
+    <script src='js/jquery-3.4.1.js'></script>
+    <script src='js/vest.js'></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(!login())
+{
+    echo "<h1>Morate biti prijavljeni da biste videli vest</h1>";
+    echo "<a href='index.php'>Početna</a>";
+    exit();
+}
+prikaziPodatke();
+
+?>
+<h1>VIŠER - Najnovije vesti</h1>
+<?php
+if(!isset($_GET['id']))
+{
+    echo "<h1>Niste izabrali vest za pregled</h1>";
+    echo "<a href='index.php'>Početna</a>";
+    exit();
+}
+$id=$_GET['id'];
+$upit="UPDATE vesti SET brojPregleda=brojPregleda+1 WHERE id=".$id;
+$db->query($upit);
+$upit="SELECT * FROM vwvesti WHERE id=".$id;
+$rez=$db->query($upit);
+if($db->num_rows($rez)>0)
+{
+    while($red=$db->fetch_object($rez))
+    {
+        $klasa="prikazVestiPrijavljen";
+        echo "<div class='$klasa'>";
+        echo "<a href='index.php?kategorija=$red->idKategorije'>$red->nazivKategorije</a><br>";
+        echo "<h2>$red->naslov</h2>";   
+        echo "$red->tekst<br>";
+        echo "<b>$red->ime $red->prezime</b><br>";
+        echo date("d.m.Y H:i", strtotime($red->vreme))."<br>";
+        echo "Broj pregleda: $red->brojPregleda<br>";
+        echo "<br>";
+        echo "<div class='dugme' onclick='povecajLikes($id)'>Dopada mi se (<span id='brojLikes'>$red->likes</span>)</div> ";
+        echo "<div class='dugme' onclick='povecajDislikes($id)'>Ne dopada mi se (<span id='brojDislikes'>$red->dislikes</span>)</div> " ;
+        echo "</div>";
+    }
+}
+else
+    echo "Nema takva vest u bazi";
+?>
+</body>
+</html>
+
+
+//funkcije.php
+<?php
+function login(){
+    if(isset($_SESSION['id']) AND isset($_SESSION['ime']) AND isset($_SESSION['status']) )
+        return true;
+    else
+        return false;
+}
+function odjaviKorisnika(){
+    session_unset();
+    session_destroy();
+}
+
+function prikaziPodatke(){
+    echo "<div class='podaciPrijava'>";
+    echo "Prijavljeni ste kao {$_SESSION['ime']} ({$_SESSION['status']})<br>";
+    echo "<a href='index.php'>Početna</a> | ";
+    if($_SESSION['status']=='Administrator' OR $_SESSION['status']=='Urednik') echo "<a href='admin.php'>Administracija</a> | ";
+    echo "<a href='index.php?odjava'>Odjava</a>";
+    echo "</div>";
+}
+
+
+?>
+
+
+//admin.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrativni panel</title>
+    <script src='js/jquery-3.4.1.js'></script>
+    <script src='js/admin.js'></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(login() and ($_SESSION['status']=='Administrator' or $_SESSION['status']=='Urednik'))
+    prikaziPodatke();
+else
+{
+    echo "Morate biti prijavljeni kao Administrator ili Urednik da biste videli ovu stranicu<br><a href='index.php'>Prijavite se</a>";
+    exit();
+}
+?>
+<h1>Administrativni panel</h1>
+<div>
+<div class='opcija'>
+    <h3>Dodavanje/izmena/brisanje vesti</h3>
+    <select name="vesti" id="vesti"></select> <br><br>
+    <button id="brisanje" type="button">Obrišite izabranu vest</button><br><hr>
+    <input type="text" name="id" id="id" readonly/><br><br>
+    <input type="text" name="naslov" id="naslov" size="70" placeholder="Unesite naslov"/><br><br>
+    <textarea name="tekst" id="tekst" cols="65" rows="10" placeholder="Unesite tekst"></textarea><br><br>
+    <select name="kategorije" id="kategorije"></select><br><br>
+    <button id="btnVest" name="btnVest">Snimite izmene/vest</button><br><br>
+    <div id="divVest"></div>
+</div>
+<?php
+if($_SESSION['status']=="Administrator")
+{
+?>
+<div class='opcija'>
+    <h3>Logovi</h3>
+    <select name="log" id="log">
+        <option value="0">--izaberite log--</option>
+        <option value="logovanje.txt">Logovanja</option>
+        <option value="statistika.txt">Statistika</option>
+    </select><br><br>
+    <div id='divlogovi'></div>
+</div>
+<?php
+}
+?>
+
+</div>
+</body>
+</html>
+
+
+//style.css
+body{
+    font-family: Arial, Helvetica, sans-serif;
+}
+.podaciPrijava{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+}
+.prikazVesti{
+    border: 1px solid darkgray;
+    background-color: lightgray;
+    display: inline-block;
+    width: 300px;
+    margin: 5px;
+    padding: 5px;
+    text-align: center;
+}
+.prikazVestiPrijavljen{
+    border: 1px solid darkgray;
+    background-color: lightgray;
+    width: 600px;
+    margin: 5px;
+    padding: 5px;
+    text-align: center;
+}
+.dugme{
+    background-color: lightgreen;
+    cursor: pointer;
+    margin: 5px;
+    padding: 5px;
+    display: inline-block;
+    width: 200px;
+}
+.dugme:hover{
+    background-color: lightskyblue;
+    cursor: pointer;
+    
+}
+.dugme:active{
+    background-color: rgb(37, 37, 94);
+    cursor: pointer;
+    color: white;
+}
+.opcija{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+    display:inline-block;
+}
+div{
+    vertical-align: text-top;
+}
+
+
+//index.js
+$(document).ready(function(){
+    $("#dugmeZaPrijavu").click(function(){
+        let korime=$("#korime").val();
+        let lozinka=$("#lozinka").val();
+        if(korime=="" || lozinka=="")
+        {
+            $("#odgovor").html("Svi podaci su obavezni");
+            return false;
+        }
+        $.post("ajax/ajax_index.php?funkcija=prijava", {korime: korime, lozinka:lozinka}, function(response){
+            if(response=="1") document.location.assign("index.php");
+            else $("#odgovor").html(response);
+        })
+    })
+})
+
+
+//vest.js
+function povecajLikes(id)
+{
+    $.get("ajax/ajax_vest.php?funkcija=povecajLikes", {id:id}, function(response){
+        $("#brojLikes").html(response);
+    })
+}
+
+function povecajDislikes(id)
+{
+    $.get("ajax/ajax_vest.php?funkcija=povecajDislikes", {id:id}, function(response){
+        $("#brojDislikes").html(response);
+    })
+}
+
+//admin.js
+$(document).ready(function(){
+    popuniSelect();
+    popuniKategorije();
+    $("#log").change(function(){
+        let fajl=$(this).val();
+        if(fajl=="0")
+        {
+            $("#divlogovi").html("");
+            return false;
+        }
+        $.post("ajax/ajax_admin.php?funkcija=log",{fajl:fajl}, function(response){
+            $("#divlogovi").html(response);
+        })
+    })
+
+    $("#brisanje").click(function(){
+        let id=$("#vesti").val();
+        if(id=="0")
+        {
+            $("#divVest").html("Niste izabrali vest za brisanje");
+            return false;
+        }
+        if(!confirm("Da li ste sigurni da želite da izbrišete vest?")) return false;
+        $.post("ajax/ajax_admin.php?funkcija=brisanje", {id:id}, function(response){
+            $("#divVest").html(response);
+            popuniSelect();
+            ocistiVest();
+        })
+    })
+
+    $("#btnVest").click(function(){
+        let id=$("#id").val();
+        let naslov=$("#naslov").val();
+        let tekst=$("#tekst").val();
+        let kategorije=$("#kategorije").val();
+        $.post("ajax/ajax_admin.php?funkcija=vest", {id:id, naslov:naslov, tekst:tekst, kategorije:kategorije}, function(response){
+            $("#divVest").html(response);
+            popuniSelect();
+            ocistiVest();
+        })
+    })
+
+    
+
+    $("#vesti").change(function(){
+        let id=$(this).val();
+        if(id=="0")
+        {
+            ocistiVest();
+            return false;
+        }
+        $.post("ajax/ajax_admin.php?funkcija=prikaziVest", {id:id}, function(response){
+            let odg=JSON.parse(response);
+            $("#id").val(odg[0].id);
+            $("#naslov").val(odg[0].naslov);
+            $("#tekst").val(odg[0].tekst);
+            $("#kategorije").val(odg[0].idKategorije);
+            $("#divVest").html("");
+        })
+    })
+})
+
+function popuniSelect()
+{
+    let vest=$("#vesti");
+    $.post("ajax/ajax_admin.php?funkcija=popuniSelect", function(response){
+        let odg=JSON.parse(response);
+        vest.empty();
+        vest.append("<option value='0'>--izaberite vest--</option>");
+        for(let i=0;i<odg.length;i++)
+        {
+            if(odg[i].naslov.length>60)odg[i].naslov=odg[i].naslov.substr(0,60)+"...";
+            vest.append("<option value='"+ odg[i].id +"'>"+ odg[i].naslov +"</option>");
+        }
+    })
+}
+
+function popuniKategorije()
+{
+    let kategorije=$("#kategorije");
+    $.post("ajax/ajax_admin.php?funkcija=popuniKategorije", function(response){
+        let odg=JSON.parse(response);
+        kategorije.empty();
+        kategorije.append("<option value='0'>--izaberite kategoriju--</option>");
+        for(let i=0;i<odg.length;i++)
+        {
+            kategorije.append("<option value='"+ odg[i].id +"'>"+ odg[i].nazivKategorije +"</option>");
+        }
+    })
+}
+
+function ocistiVest(){
+    $("input").val("");
+    $("#vest").val("0");
+    $("#tekst").val("");
+    $("#kategorije").val("0");
+}
+
+//classbaza.php
+<?php
+class Baza{
+    private $server="localhost";
+    private $username="root";
+    private $password="";
+    private $database="pva_jun_2020";
+    private $db;
+
+    public function connect(){
+        $this->db=@mysqli_connect($this->server, $this->username, $this->password, $this->database);
+        if(!$this->db)
+            return false;
+        $this->query("SET NAMES UTF8");
+        return $this->db;
+    }
+
+    public function query($sql){
+        return mysqli_query($this->db, $sql);
+    }
+
+    public function num_rows($rez){
+        return mysqli_num_rows($rez);
+    }
+
+    public function fetch_object($rez){
+        return mysqli_fetch_object($rez);
+    }
+
+    public function fetch_assoc($rez){
+        return mysqli_fetch_assoc($rez);
+    }
+
+    public function affected_rows(){
+        return mysqli_affected_rows($this->db);
+    }
+
+    public function error(){
+        return mysqli_error($this->db);
+    }
+
+    public function insert_id(){
+        return mysqli_insert_id($this->db);
+    }
+
+    public function fetch_all($rez){
+        return mysqli_fetch_all($rez, MYSQLI_ASSOC);
+    }
+}
+?>
+
+
+//classlog.php
+<?php
+class Log{
+    public static function upisiLog($imeDatoteke, $stringZaUpis){
+        $stringZaUpis=date("d.m.Y H:i:s", time())." - $stringZaUpis\r\n";
+        $f=fopen($imeDatoteke, "a");
+        fwrite($f, $stringZaUpis);
+        fclose($f);
+    }
+}
+?>
