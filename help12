@@ -1,0 +1,46 @@
+//prikazi.php
+<?php
+
+if(isset($_COOKIE['bpoz']) && isset($_COOKIE['bslova'])){
+
+
+    $bpoz=$_COOKIE['bpoz'];
+    $bslova=$_COOKIE['bslova'];
+
+    echo "<body style='background-color:$bpoz'>";
+    echo "<div style='color:$bslova'>Ovo je tekst</div>";
+}
+?>
+
+//kreiraj.php
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="vezba_kreiraj.php" method="post">
+        <input type="text" name="ime" id="ime" placeholder="Unesi ime"><br><br>
+        <input type="text" name="prezime" id="prezime" placeholder="Unesi prezime"><br><br>
+        <button id="btn" name="btn">Posalji</button><br><br>
+    </form>
+<?php
+    if(isset($_POST['btn'])){
+        $ime=$_POST['ime'];
+        $prezime=$_POST['prezime'];
+
+        if($ime!="" && $prezime!=""){
+            setcookie("ime",$ime,time()+84600,"/");
+            setcookie("prezime",$prezime,time()+84600,"/");
+        }
+        else{
+            setcookie("ime",$ime,time()-1,"/");
+            setcookie("prezime",$prezime,time()-1,"/");
+        }
+    }
+?>
+</body>
+</html>
