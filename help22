@@ -1,0 +1,46 @@
+//stranica.php
+<?php
+
+session_start();
+if(isset($_SESSION['jezik'])){
+
+    $jezik=$_SESSION['jezik'];
+
+    if($jezik=="srpski"){
+        echo "<div>Dobar dan</div>";
+    }
+
+    if($jezik=="engleski"){
+        
+        echo "<div>Hello world</div>";
+    }
+
+    if($jezik=="nemacki"){
+        
+        echo "<div>Was hast du gedaht</div>";
+    }
+}
+else{
+    echo "<div>Sesija ne postoji</div>";
+}
+
+?>
+
+//stranica2.php
+<?php
+    session_start();
+    if(isset($_SESSION['email']) && isset($_SESSION['lozinka'])){
+        $email=$_SESSION['email'];
+        $lozinka=$_SESSION['lozinka'];
+
+        if($email!="" && $lozinka!=""){
+            echo "$email<br>";
+            echo "$lozinka<br>";
+            session_unset();
+            session_destroy();
+        }
+    }
+    else{
+        echo "SESIJA NIJE KREIRANA!";
+    }
+?>
