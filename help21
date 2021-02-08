@@ -1,0 +1,75 @@
+//izbor.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h1>Zadatak 2</h1>
+    <form action="izbor.php" method="post">
+    <select name="jezik" id="jezik">
+    <option value="null">--Izaberi jezik--</option>
+    <option value="srpski">Srpski</option>
+    <option value="engleski">Engleski</option>
+    <option value="nemacki">Nemacki</option>
+    </select><br><br>
+    <button id="btn" name="btn">Posalji</button>
+    </form>
+    <?php
+    if(isset($_POST['btn'])){
+        $jezik=$_POST['jezik'];
+
+        if($jezik!="null"){
+            session_start();
+            $_SESSION['jezik']=$jezik;
+            header("Location: stranica.php");
+        }
+        else{
+            header("Location: stranica.php");
+            session_unset();
+            session_destroy();
+        }
+
+    }
+    ?>
+</body>
+</html>
+
+
+//login.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="vezba2_login.php" method="post">
+        <input type="email" name="email" id="email" placeholder="Unesi email"><br><br>
+        <input type="password" name="lozinka" id="lozinka" placeholder="Unesi lozinku"><br><br>
+        <button type="submit" name="btn" id="btn">Login</button><br><br>
+    </form>
+    <?php
+        if(isset($_POST['btn'])){
+            $email=$_POST['email'];
+            $lozinka=$_POST['lozinka'];
+
+            if($email!="" && $lozinka!=""){
+                session_start();
+                $_SESSION['email']=$email;
+                $_SESSION['lozinka']=$lozinka;
+                header("Location: vezba2_stranica.php");
+            }
+            else{
+                header("Location: vezba2_stranica.php");
+                session_unset();
+                session_destroy();
+            }
+        }
+    ?>
+</body>
+</html>
