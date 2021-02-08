@@ -1,0 +1,207 @@
+//zad1.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        .veliki{
+            width: 700px;
+            height: 220px;
+            background-color: aqua;
+            border: 2px solid black;
+
+        }
+        .levi{
+            width: 220px;
+            height: 182px;
+            border: 1px dotted rgb(248, 8, 8);
+            margin: 5px;
+            float: left;
+        }
+        .desni{
+            width: 220px;
+            height: 182px;
+            border: 1px dotted rgb(248, 8, 8);
+            margin: 5px;
+            float: right;
+        }
+       .srednji{
+            width: 220px;
+            height: 140px;
+            background-color: white;
+            border: 5px dotted black;
+            margin-top: 70px;
+            float: left;
+            margin-left: 5px;
+       }
+       .prvi{
+           width: 240px;
+           height: 200px;
+           border: 4px solid blue;
+           background-color: yellow;
+           color: red;
+           padding: 5px;
+           margin:5px;
+           float: left;
+       }
+       .drugi{
+            width: 240px;
+           height: 200px;
+           border: 4px solid blue;
+           background-color: yellow;
+           color: red;
+           padding: 5px;
+           margin:5px;
+           float: left;
+       }
+    </style>
+</head>
+<body>
+    <h1 style="color: blue;">Prvi kolokvijum</h1>
+    <ul>
+        <li><a href="zad1.html">Link ka zadatku 1</a></li>
+        <li><a href="zad2.php">Link ka zadatku 2</a></li>
+        <li><a href="zad3.php">Link ka zadatku 3</a></li>
+    </ul>
+
+    <div class="veliki">
+        <div class="levi">
+            <img src="sl1.jpg" alt="slika1" width="220px" height="180px">
+        </div>
+        <div class="srednji">
+            <p style="margin-top: 0px;"><b>DIV</b><br> Na osnovu datog izgleda kreirati stranicu <b><i>zadatak1.html</i></b>.Podesiti sve 
+            neophodne elemente. Stilove zadati u posebnoj datpteci ili u zaglavlju html stranice. Linkove ka ostalim zadacima postaviti u neuredjenu listu.</p>
+        </div>
+        <div class="desni">
+            <img src="sl2.jpg" alt="slika2" width="220px" height="180px">
+        </div>
+    </div>
+
+    <p class="prvi">
+        <b>Paragraf</b><br>Lorem ipsum <span style="background-color: black; color: white;">dolor, sit amet consectetur adipisicing elit. Deleniti vero ad quidem praesentium? Eveniet doloribus vitae modi. Ipsa,</span>  praesentium! Exercitationem quos ab voluptates tempore cumque labore, iure reprehenderit inventore facilis!
+    </p>
+    <p class="drugi">
+        <b>Paragraf</b><br>Lorem ipsum dolor, sit amet consectetur adipisicing elit.<span style="background-color: red; color: white;"> Deleniti vero ad quidem praesentium? </span> Eveniet doloribus vitae modi. Ipsa, praesentium! Exercitationem quos ab voluptates tempore cumque labore, iure reprehenderit inventore facilis!
+    </p>
+</body>
+</html>
+
+
+//zad2.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Zadatak 2</h1>
+    <h3>Unesite podatke o korisniku</h3>
+    <form action="zad2.php" method="post">
+        <input type="text" name="ime" id="ime" placeholder="Ime"><br><br>
+        <input type="text" name="prezime" id="prezime" placeholder="Prezime"><br><br>
+        <input type="email" name="email" id="email" placeholder="email"><br><br>
+        <input type="date" name="dat" id="dat" ><br><br>
+        <select name="pol" id="pol">
+            <option value="0">--Izaberite pol--</option>
+            <option value="m">Muski</option>
+            <option value="z">Zenski</option>
+        </select> <br><br>
+        <input type="submit" name="btn" value="Posalji"><br><br><hr>
+    </form>
+    <?php
+    if(isset($_POST['pol'])){
+        $ime=$_POST['ime'];
+        $prezime=$_POST['prezime'];
+        $email=$_POST['email'];
+        $datum=$_POST['dat'];
+        $pol=$_POST['pol'];
+
+        if($ime=="" or $prezime=="" or $email=="" or $datum=="" or $pol=="0"){
+            echo "Unesite podatke!";
+        }
+        else
+        {
+            $file=fopen("korisnici.txt","a");
+            $upis=$ime."|".$prezime."|".$email."|".$datum."|".$pol."\r\n";
+            fwrite($file,$upis);
+            fclose($file);
+            echo "Podaci uspesno upisani u datoteku!";
+        }
+    }
+    ?>
+    <h3>Upisani podaci</h3>
+    <?php
+    if(file_exists("korisnici.txt")){
+
+        $trenutniDat=mktime(0,0,0,date("m"),date("d"),date("Y"));
+
+        $file=fopen("korisnici.txt","r");
+
+        while($ispis=fgets($file)){
+            $korisno=explode("|",$ispis);
+            echo "E-mail:".$korisno[2]."<br>";
+            $godine=round(($trenutniDat - strtotime($korisno[3]))/(60*60*24*365));
+            echo "Godine korisnika: ".$godine."<br>";
+
+        }
+        fclose($file);
+    }
+    
+    ?>
+</body>
+</html>
+
+//zad3.php
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="zad3.php" method="post" enctype="multipart/form-data">
+        <input type="file" name="dat" id="dat"><br><br>
+        <input type="submit" name="btn" value="Upload"><br><br>
+    </form>
+    
+    <?php
+    if(isset($_POST['btn'])){
+
+        $folder="wordDokumenti/";
+
+        $imeDat=$folder.date("dmY_His",time()).$_FILES['dat']['name'];
+
+        $tmpNiz=explode(".",$_FILES['dat']['name']);
+
+        if($tmpNiz[count($tmpNiz)-1]=="docx"){
+            if($_FILES['dat']['size']<2000000){
+                if(move_uploaded_file($_FILES['dat']['tmp_name'],$imeDat)){
+                    echo "Uspesno prebacivanje datoteke!";
+                    echo "<a href=".$imeDat.">Slika</a>";
+                }
+                else{
+                    echo "Doslo je do greske!";
+                }
+            }
+            else
+            {
+                echo "Prevelika datoteka!";
+            }
+        }
+        else
+        {
+            echo "Pogresan tip datoteke!";
+        }
+
+
+    }
+    ?>
+</body>
+</html>
