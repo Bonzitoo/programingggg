@@ -1,0 +1,90 @@
+//dodaj.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Dodaj</h1>
+    <form action="dodaj.php" method="post">
+    <input type="text" name="naziv" id="naziv" placeholder="Unesite naziv"><br><br>
+    <input type="text" name="tekst" id="tekst" placeholder="Unesite tekst"><br><br>
+    <select name="kategorija" id="kategorija">
+    <option value="null">--Izaberi kategoriju--</option>
+    <option value="hrana">Hrana</option>
+    <option value="pice">Pice</option>
+    <option value="ostalo">Ostalo</option>
+    </select><br><br>
+    <input type="text" name="cena" id="cena" placeholder="Unesite cenu"><br><br>
+    <input type="text" name="kolicina" id="kolicina" placeholder="Unesite kolicinu"><br><br>
+    <button id="btn" name="btn">Posalji</button>
+    </form>
+    <?php
+    if(isset($_POST['btn'])){
+
+        $naziv=$_POST['naziv'];
+        $tekst=$_POST['tekst'];
+        $kategorija=$_POST['kategorija'];
+        $cena=$_POST['cena'];
+        $kolicina=$_POST['kolicina'];
+
+        if($naziv!="" && $tekst!="" && $kategorija!="null" && $cena!="" && $kolicina!=""){
+
+            $db=mysqli_connect("localhost","root","","pva_kolokvijum");
+            mysqli_query($db,"SET NAMES utf8");
+
+            $upit="INSERT INTO proizvodi (naziv,tekst,kategorija,cena,kolicina) VALUES ('$naziv','$tekst','$kategorija','$cena','$kolicina')";
+            mysqli_query($db,$upit);
+
+        }
+        else{
+            echo "Morate uneti sve podatke!!!";
+        }
+    }
+    ?>
+</body>
+</html>
+
+//dodaj2.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="vezba2_dodaj.php" method="post">
+        <input type="text" name="ime" id="ime" placeholder="ime"><br><br>
+        <input type="text" name="prezime" id="prezime" placeholder="prezime"><br><br>
+        <input type="text" name="stat" id="stat" placeholder="status"><br><br>
+        <input type="email" name="email" id="email" placeholder="email"><br><br>
+        <input type="password" name="lozinka" id="lozinka" placeholder="lozinka"><br><br>
+        <button name="btn" id="btn">Dodaj</button>
+    </form>
+    <?php
+        if(isset($_POST['btn'])){
+            $ime=$_POST['ime'];
+            $prezime=$_POST['prezime'];
+            $stat=$_POST['stat'];
+            $email=$_POST['email'];
+            $lozinka=$_POST['lozinka'];
+
+            if($ime!="" && $prezime!="" && $stat!="" && $email!="" && $lozinka!=""){
+                
+                $db=mysqli_connect("localhost","root","","pva_vezba");
+                mysqli_query($db,"SET NAMES utf8");
+
+                $upit="INSERT INTO korisnici (ime,prezime,status,email,lozinka) VALUES ('$ime','$prezime','$stat','$email','$lozinka')";
+                mysqli_query($db,$upit);
+                echo "Uspesno uneti podaci!";
+            }
+            else{
+                echo "MORATE UNETI SVE PODATKE!";
+            }
+        }
+    ?>
+</body>
+</html>
