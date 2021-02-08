@@ -1,0 +1,589 @@
+//index.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Početna</title>
+    <script src='jquery-3.4.1.js'></script>
+    <script src='index.js'></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(isset($_GET['odjava']))
+{
+    Log::upisiLog("logovi/logovanje.txt", "Odjava korisnika '{$_SESSION['ime']}'");
+    odjaviKorisnika();
+}
+if(login())
+    prikaziPodatke();
+else
+{
+    ?>
+    <div class='podaciPrijava'>
+        <input type="text" name='korime' id='korime' placeholder="Unesite korisničko ime"/> 
+        <input type="text" name='lozinka' id='lozinka' placeholder="Unesite lozinku"/> 
+        <button type='button' id='dugmeZaPrijavu'>Prijavite se</button><br>
+        <div id="odgovor"></div>
+    </div>
+    <?php
+}
+?>
+<h1>Prijava ispita</h1>
+<?php
+$upit="SELECT * FROM vwpredmeti order by datum asc";
+$rez=$db->query($upit);
+if($db->num_rows($rez)>0)
+{
+    while($red=$db->fetch_object($rez))
+    {
+        $klasa='aktivan';
+        $dugme="";
+        if(strtotime($red->datum." 00:00:00")<time())$klasa='prosao';
+        if($klasa=="aktivan" AND login() AND $_SESSION['status']=='Student') $dugme="<button type='button' onclick='prijaviIspit($red->id)'>Prijavite ispit</button>";
+        echo "<div class='$klasa'>";
+        echo "<h4>$red->naziv ($red->ime $red->prezime)</h4>";
+        echo "$red->datum ($red->nazivNP)";
+        echo "<br>".$dugme;
+        echo "</div>";
+    }
+}
+else
+    echo "Nema ni jedan zakazan ispit u bazi!!!!";
+if(login() AND $_SESSION['status']=="Student")
+{
+    echo "<h3>Prijavljeni ispiti</h3>";
+    $upit="SELECT * FROM prijava WHERE idStudenta=".$_SESSION['id'];
+    $rez=$db->query($upit);
+    if($db->num_rows($rez)==0)
+        echo "Nemate ni jedan prijavljen ispit";
+    else
+    {
+        echo "<h4>Broj prijavljenih ispita: ".$db->num_rows($rez)."</h4>";
+        echo "<br>";
+        while($red=$db->fetch_object($rez))
+        {
+            $upit="SELECT * FROM predmeti WHERE id=$red->idPredmeta";
+            $pomrez=$db->query($upit);
+            $pomred=$db->fetch_object($pomrez);
+            echo "$pomred->datum - $pomred->naziv<br>";
+        }
+    }
+}
+?>
+</body>
+</html>
+
+
+//prof.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profesorski servis</title>
+    <script src='jquery-3.4.1.js'></script>
+    <script src='prof.js'></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(login() and $_SESSION['status']=='Profesor')
+    prikaziPodatke();
+else
+{
+    echo "Morate biti prijavljeni kao Profesor da biste videli ovu stranicu<br><a href='index.php'>Prijavite se</a>";
+    exit();
+}
+?>
+<h1>Profesorski servis</h1>
+<div>
+<div class='opcija'>
+    <h3>Dodavanje/izmena/brisanje predmeta</h3>
+    <select name="predmet" id="predmet"></select> <button type='button' id="brisanje">Obrišite predmet</button><br><br>
+    <input type="text" name="id" id="id" readonly/><br><br>
+    <input type="text" name="naziv" id="naziv" placeholder="Unesite naziv"/><br><br>
+    <select name="nacinPolaganja" id="nacinPolaganja">
+        <option value="0">--izaberite način polaganja--</option>
+        <?php
+        $upit="SELECT * FROM nacinpolaganja";
+        $rez=$db->query($upit);
+        while($red=$db->fetch_object($rez))
+            echo "<option value='$red->id'>$red->naziv</option>";
+        ?>
+        
+    </select><br><br>
+    <input type="date" name="datum" id="datum"/><br><br>
+    <button id="btnPredmet" type="button">Snimite podatke</button>
+    <div id="divPredmeti"></div>
+</div>
+<div class='opcija'>
+    <h3>Logovi</h3>
+    <select name="log" id="log">
+        <option value="0">--izaberite log--</option>
+        <option value="logovanje.txt">Logovanja</option>
+        <option value="prijavaispita.txt">Prijava ispita</option>
+    </select><br><br>
+    <div id='divlogovi'></div>
+</div>
+<div class='opcija'>
+    <h3>Broj prijavljenih studenata</h3>
+    <select name="predmetiBroj" id="predmetiBroj"></select><br><br>
+    <div id='divbroj'></div>
+</div>
+</div>
+</body>
+</html>
+
+
+//index.js
+$(document).ready(function(){
+    $("#dugmeZaPrijavu").click(function(){
+        let korime=$("#korime").val();
+        let lozinka=$("#lozinka").val();
+        if(korime=="" || lozinka=="")
+        {
+            $("#odgovor").html("Svi podaci su obavezni");
+            return false;
+        }
+        $.post("ajax/ajax_index.php?funkcija=prijava", {korime: korime, lozinka:lozinka}, function(response){
+            if(response=="1") document.location.assign("index.php");
+            else $("#odgovor").html(response);
+        })
+    })
+})
+
+function prijaviIspit(idPredmeta)
+{
+    $.post("ajax/ajax_index.php?funkcija=prijavaIspita", {id: idPredmeta}, function(response){
+        if(response=="1") document.location.assign("index.php");
+        else alert(response);
+    })
+}
+
+
+//prof.js
+$(document).ready(function(){
+    popuniSelect();
+    $("#log").change(function(){
+        let fajl=$(this).val();
+        if(fajl=="0")
+        {
+            $("#divlogovi").html("");
+            return false;
+        }
+        $.post("ajax/ajax_prof.php?funkcija=log",{fajl:fajl}, function(response){
+            $("#divlogovi").html(response);
+        })
+    })
+
+    $("#predmetiBroj").change(function(){
+        let id=$(this).val();
+        if(id=="0")
+        {
+            $("#divbroj").html("");
+            return false;
+        }
+        $.post("ajax/ajax_prof.php?funkcija=predmetiBroj",{id:id}, function(response){
+            $("#divbroj").html(response);
+        })
+    })
+
+    $("#brisanje").click(function(){
+        let id=$("#predmet").val();
+        if(!confirm("Da li ste sigurni da želite da izbrišete predmet?")) return false;
+        if(id=="0")
+        {
+            $("#divPredmeti").html("Niste izabrali predmet za brisanje");
+            return false;
+        }
+        $.post("ajax/ajax_prof.php?funkcija=brisanje", {id:id}, function(response){
+            $("#divPredmeti").html(response);
+        })
+    })
+
+    $("#btnPredmet").click(function(){
+        let id=$("#id").val();
+        let naziv=$("#naziv").val();
+        let datum=$("#datum").val();
+        let nacinpolaganja=$("#nacinPolaganja").val();
+        $.post("ajax/ajax_prof.php?funkcija=predmet", {id:id, naziv:naziv, datum: datum, nacinpolaganja: nacinpolaganja}, function(response){
+            $("#divPredmeti").html(response);
+            popuniSelect();
+            ocistiPredmet();
+        })
+    })
+
+    $("#predmet").change(function(){
+        let id=$(this).val();
+        if(id=="0")
+        {
+            ocistiPredmet();
+            return false;
+        }
+        $.post("ajax/ajax_prof.php?funkcija=prikaziPredmet", {id:id}, function(response){
+            let predmet=JSON.parse(response);
+            $("#id").val(predmet[0].id);
+            $("#naziv").val(predmet[0].naziv);
+            $("#datum").val(predmet[0].datum);
+            $("#nacinPolaganja").val(predmet[0].nacinpolaganja);
+        })
+    })
+})
+
+function popuniSelect()
+{
+    let broj=$("#predmetiBroj");
+    let predmet=$("#predmet");
+    $.post("ajax/ajax_prof.php?funkcija=popuniSelect", function(response){
+        let predmeti=JSON.parse(response);
+        broj.empty();
+        predmet.empty();
+        broj.append("<option value='0'>--izaberite predmet--</option>");
+        predmet.append("<option value='0'>--izaberite predmet--</option>");
+        for(let i=0;i<predmeti.length;i++)
+        {
+            broj.append("<option value='"+ predmeti[i].id +"'>"+ predmeti[i].naziv +"</option>");
+            predmet.append("<option value='"+ predmeti[i].id +"'>"+ predmeti[i].naziv +"</option>");
+        }
+    })
+}
+
+function ocistiPredmet(){
+    $("input").val("");
+    $("#predmet").val("0");
+    $("#nacinPolaganja").val("0");
+}
+
+
+//pva.sql
+-- phpMyAdmin SQL Dump
+-- version 4.9.2
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: Feb 07, 2020 at 03:32 PM
+-- Server version: 10.4.10-MariaDB
+-- PHP Version: 7.1.33
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `pva_januar2020`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `korisnici`
+--
+
+CREATE TABLE `korisnici` (
+  `id` int(3) UNSIGNED NOT NULL,
+  `ime` varchar(20) NOT NULL,
+  `prezime` varchar(30) NOT NULL,
+  `korime` varchar(10) NOT NULL,
+  `lozinka` varchar(256) NOT NULL,
+  `status` enum('Profesor','Student') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `korisnici`
+--
+
+INSERT INTO `korisnici` (`id`, `ime`, `prezime`, `korime`, `lozinka`, `status`) VALUES
+(1, 'Ivan', 'Miljković', 'ivanm', 'ivanm', 'Profesor'),
+(2, 'Jovan', 'Delević', 'jovand', 'jovand', 'Profesor'),
+(3, 'Pera', 'Perić', 'perap', 'perap', 'Student'),
+(4, 'Jovan', 'Jović', 'jovanj', 'jovanj', 'Student'),
+(5, 'Joca', 'Jocić', 'jocaj', 'jocaj', 'Student'),
+(6, 'Aca', 'Acić', 'acaa', 'acaa', 'Student');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `nacinpolaganja`
+--
+
+CREATE TABLE `nacinpolaganja` (
+  `id` int(2) UNSIGNED NOT NULL,
+  `naziv` varchar(30) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `nacinpolaganja`
+--
+
+INSERT INTO `nacinpolaganja` (`id`, `naziv`) VALUES
+(1, 'pismeno'),
+(2, 'usmeno'),
+(3, 'kolokvijumi - parcijalno'),
+(4, 'praktični zadatak');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `predmeti`
+--
+
+CREATE TABLE `predmeti` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `naziv` varchar(50) NOT NULL,
+  `nacinpolaganja` int(2) NOT NULL,
+  `datum` date NOT NULL,
+  `idProfesora` int(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `predmeti`
+--
+
+INSERT INTO `predmeti` (`id`, `naziv`, `nacinpolaganja`, `datum`, `idProfesora`) VALUES
+(1, 'Programiranje veb aplikacija', 4, '2020-02-22', 1),
+(2, 'Baze podataka 2', 1, '2020-02-20', 1),
+(3, 'Big Data', 3, '2020-02-05', 1),
+(4, 'Arhitektura i organizacija računara 1', 1, '2020-02-27', 2),
+(5, 'Arhitektura i organizacija računara 2', 2, '2020-02-28', 2),
+(6, 'Aplikativni softver', 3, '2020-02-05', 2);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `prijava`
+--
+
+CREATE TABLE `prijava` (
+  `id` int(3) UNSIGNED NOT NULL,
+  `idStudenta` int(3) NOT NULL,
+  `idPredmeta` int(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `prijava`
+--
+
+INSERT INTO `prijava` (`id`, `idStudenta`, `idPredmeta`) VALUES
+(1, 3, 2),
+(2, 3, 1),
+(3, 3, 4),
+(4, 4, 5),
+(5, 4, 4),
+(6, 4, 1),
+(7, 5, 2),
+(8, 5, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `vwpredmeti`
+-- (See below for the actual view)
+--
+CREATE TABLE `vwpredmeti` (
+`id` int(10) unsigned
+,`naziv` varchar(50)
+,`nacinpolaganja` int(2)
+,`datum` date
+,`idProfesora` int(3)
+,`nazivNP` varchar(30)
+,`ime` varchar(20)
+,`prezime` varchar(30)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `vwpredmeti`
+--
+DROP TABLE IF EXISTS `vwpredmeti`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vwpredmeti`  AS  select `predmeti`.`id` AS `id`,`predmeti`.`naziv` AS `naziv`,`predmeti`.`nacinpolaganja` AS `nacinpolaganja`,`predmeti`.`datum` AS `datum`,`predmeti`.`idProfesora` AS `idProfesora`,`nacinpolaganja`.`naziv` AS `nazivNP`,`korisnici`.`ime` AS `ime`,`korisnici`.`prezime` AS `prezime` from ((`predmeti` join `nacinpolaganja` on(`predmeti`.`nacinpolaganja` = `nacinpolaganja`.`id`)) join `korisnici` on(`predmeti`.`idProfesora` = `korisnici`.`id`)) ;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `korisnici`
+--
+ALTER TABLE `korisnici`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `korime` (`korime`);
+
+--
+-- Indexes for table `nacinpolaganja`
+--
+ALTER TABLE `nacinpolaganja`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `predmeti`
+--
+ALTER TABLE `predmeti`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `naziv` (`naziv`);
+
+--
+-- Indexes for table `prijava`
+--
+ALTER TABLE `prijava`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `korisnici`
+--
+ALTER TABLE `korisnici`
+  MODIFY `id` int(3) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `nacinpolaganja`
+--
+ALTER TABLE `nacinpolaganja`
+  MODIFY `id` int(2) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `predmeti`
+--
+ALTER TABLE `predmeti`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `prijava`
+--
+ALTER TABLE `prijava`
+  MODIFY `id` int(3) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+//style.css
+.podaciPrijava{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+}
+.aktivan{
+    border: 1px solid black;
+    background-color: lightgreen;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+}
+.prosao{
+    border: 1px solid black;
+    background-color: plum ;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+}
+
+.opcija{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+    display:inline-block;
+}
+div{
+    vertical-align: text-top;
+}
+
+//classbaza.php
+<?php
+class Baza{
+    private $server="localhost";
+    private $username="root";
+    private $password="";
+    private $database="pva_januar2020";
+    private $db;
+
+    public function connect(){
+        $this->db=@mysqli_connect($this->server, $this->username, $this->password, $this->database);
+        if(!$this->db)
+            return false;
+        $this->query("SET NAMES UTF8");
+        return $this->db;
+    }
+
+    public function query($sql){
+        return mysqli_query($this->db, $sql);
+    }
+
+    public function num_rows($rez){
+        return mysqli_num_rows($rez);
+    }
+
+    public function fetch_object($rez){
+        return mysqli_fetch_object($rez);
+    }
+
+    public function fetch_assoc($rez){
+        return mysqli_fetch_assoc($rez);
+    }
+
+    public function affected_rows(){
+        return mysqli_affected_rows($this->db);
+    }
+
+    public function error(){
+        return mysqli_error($this->db);
+    }
+
+    public function insert_id(){
+        return mysqli_insert_id($this->db);
+    }
+
+    public function fetch_all($rez){
+        return mysqli_fetch_all($rez, MYSQLI_ASSOC);
+    }
+}
+?>
+
+
+//classlog.php
+<?php
+class Log{
+    public static function upisiLog($imeDatoteke, $stringZaUpis){
+        $f=fopen($imeDatoteke, "a");
+        $stringZaUpis=date("d.m.Y H:i:s", time())." - $stringZaUpis\r\n";
+        fwrite($f, $stringZaUpis);
+        fclose($f);
+    }
+}
+?>
