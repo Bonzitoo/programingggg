@@ -1,0 +1,663 @@
+//index.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Početna</title>
+    <script src='js/jquery-3.4.1.js'></script>
+    <script src='js/index.js'></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(login() AND isset($_GET['odjava']))
+{
+    Log::upisiLog("logovi/logovanje.txt", "Odjava korisnika '{$_SESSION['ime']}'");
+    odjaviKorisnika();
+}
+if(login())
+    prikaziPodatke();
+else
+{
+    ?>
+    <div class='podaciPrijava'>
+        <input type="text" name='korime' id='korime' placeholder="Unesite korisničko ime"/> 
+        <input type="text" name='lozinka' id='lozinka' placeholder="Unesite lozinku"/> 
+        <button type='button' id='dugmeZaPrijavu'>Prijavite se</button><br>
+        <div id="odgovor"></div>
+    </div>
+    <?php
+}
+?>
+<h1>VIŠER - kablovski operater</h1>
+<?php
+$upit="SELECT * FROM kanali order by naziv asc";
+$rez=$db->query($upit);
+if($db->num_rows($rez)>0)
+{
+    while($red=$db->fetch_object($rez))
+    {
+        
+        $dugme="";
+        
+        if(login() AND $_SESSION['status']=='Korisnik') $dugme="<div class='dugme' onclick='prijaviKanal($red->id)'>Prijavite kanal</div>";//$dugme="<button type='button' onclick='prijaviKanal($red->id)'>Prijavite se za kanal</button>";
+        echo "<div class='prikazKanala'>";
+        echo "<h2>$red->naziv</h2>";
+        $slika="slike/noimage.jpg";
+        if(file_exists("slike/$red->id.jpg"))$slika="slike/$red->id.jpg";
+        echo "<img src='$slika' height='150px' ><br>";
+        echo "$red->opis<br>";
+        echo "$red->cena din.";
+        echo "<br>".$dugme;
+        echo "</div>";
+    }
+}
+else
+    echo "Nema ni jedan kanal u bazi";
+if(login() AND $_SESSION['status']=="Korisnik")
+{
+    echo "<h3>Prijavljeni kanali</h3>";
+    $upit="SELECT * FROM kanalikorisnici WHERE idKorisnika=".$_SESSION['id'];
+    $rez=$db->query($upit);
+    if($db->num_rows($rez)==0)
+        echo "Niste prijavljeni ni za jedan kanal";
+    else
+    {
+        echo "<h4>Broj prijavljenih kanala: ".$db->num_rows($rez)."</h4>";
+        echo "<br>";
+        $i=1;
+        while($red=$db->fetch_object($rez))
+        {
+            $upit="SELECT * FROM kanali WHERE id=$red->idKanala";
+            $pomrez=$db->query($upit);
+            $pomred=$db->fetch_object($pomrez);
+            echo "$i: $pomred->naziv<br>";
+            $i++;
+        }
+    }
+}
+?>
+</body>
+</html>
+
+
+//admin.php
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrativni panel</title>
+    <script src='js/jquery-3.4.1.js'></script>
+    <script src='js/admin.js'></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<?php
+session_start();
+require_once("funkcije.php");
+require_once("klase/classBaza.php");
+require_once("klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Greška prilikom konekcije na bazu!!!<br>".$db->error();
+    exit();
+}
+if(login() and $_SESSION['status']=='Administrator')
+    prikaziPodatke();
+else
+{
+    echo "Morate biti prijavljeni kao Administrator da biste videli ovu stranicu<br><a href='index.php'>Prijavite se</a>";
+    exit();
+}
+$poruka="";
+if(isset($_POST['btnKanal']))
+{
+    $id=$_POST['id'];
+    $naziv=$_POST['naziv'];
+    $opis=$_POST['opis'];
+    $cena=$_POST['cena'];
+    if($naziv!="" AND $opis!="" AND $cena!="")
+    {
+        if($id!="")
+            $upit="UPDATE kanali SET naziv='{$naziv}', opis='{$opis}', cena={$cena} WHERE id=$id";
+        else
+            $upit="INSERT INTO kanali (naziv, opis, cena) VALUES ('{$naziv}', '{$opis}', {$cena})";
+        //echo $upit;
+        $db->query($upit);
+        if($db->error())$poruka="GREŠKA!!!!<br>".$db->error();
+        else
+        {
+            $imeSlike=$_FILES['slika']['name'];
+            if($imeSlike!="")
+            { 
+                if($id=="")
+                    $imeSlike="slike/".$db->insert_id().".jpg";
+                else
+                    $imeSlike="slike/$id.jpg";
+                if(move_uploaded_file($_FILES['slika']['tmp_name'], $imeSlike))
+                    $poruka.="Podaci snimljeni i prebačena slika";
+            }
+            else
+                $poruka="Podaci snimljeni";
+        }
+    }
+    else
+        $poruka="Svi podaci su obavezni!!!";
+}
+?>
+<h1>Administrativni panel</h1>
+<div>
+<div class='opcija'>
+    <h3>Dodavanje/izmena/brisanje kanala</h3>
+    <form action="admin.php" method="post" enctype="multipart/form-data">
+    <select name="kanal" id="kanal"></select> 
+    <button id="brisanje" type="button">Obrišite kanal</button><br><br>
+    <input type="text" name="id" id="id" readonly/><br><br>
+    <input type="text" name="naziv" id="naziv" placeholder="Unesite naziv"/><br><br>
+    <textarea name="opis" id="opis" cols="30" rows="10" placeholder="Unesite opis"></textarea><br><br>
+    <input type="number" name="cena" id="cena" value="0" min="0"/><br><br>
+    <input type="file" name="slika" id="slika"><br><br>
+    <div id="prikazSlike"></div><br>
+    <button id="btnKanal" name="btnKanal">Snimite kanal</button><br><br>
+    </form>
+    
+    <div id="divKanali"><?=$poruka?></div>
+</div>
+<div class='opcija'>
+    <h3>Logovi</h3>
+    <select name="log" id="log">
+        <option value="0">--izaberite log--</option>
+        <option value="logovanje.txt">Logovanja</option>
+        <option value="prijavakanala.txt">Prijava kanala</option>
+    </select><br><br>
+    <div id='divlogovi'></div>
+</div>
+<div class='opcija'>
+    <h3>Broj prijavljenih korisnika</h3>
+    <select name="kanaliBroj" id="kanaliBroj"></select><br><br>
+    <div id='divBroj'></div>
+</div>
+</div>
+</body>
+</html>
+
+//logovanje.txt
+11.02.2020 11:44:37 - Pogrešni podaci: 'pperic' i 'pperic'
+11.02.2020 11:45:07 - Uspešno logovanje za korisnika jjovic
+11.02.2020 12:14:15 - Odjava korisnika 'Jovan Jović'
+11.02.2020 12:14:26 - Uspešno logovanje za korisnika jjovic
+11.02.2020 12:14:31 - Odjava korisnika 'Jovan Jović'
+11.02.2020 12:15:00 - Uspešno logovanje za korisnika pperic
+11.02.2020 12:29:22 - Odjava korisnika 'Pera Perić'
+11.02.2020 12:29:35 - Uspešno logovanje za korisnika jjovic
+11.02.2020 12:30:23 - Odjava korisnika 'Jovan Jović'
+11.02.2020 12:30:33 - Uspešno logovanje za korisnika pperic
+11.02.2020 12:31:26 - Odjava korisnika 'Pera Perić'
+11.02.2020 12:53:17 - Uspešno logovanje za korisnika pperic
+11.02.2020 13:54:50 - Odjava korisnika 'Pera Perić'
+12.02.2020 14:22:54 - Uspešno logovanje za korisnika pperic
+14.02.2020 08:37:22 - Uspešno logovanje za korisnika jjovic
+14.02.2020 08:44:54 - Odjava korisnika 'Jovan Jović'
+14.02.2020 08:45:26 - Uspešno logovanje za korisnika pperic
+14.02.2020 09:11:04 - Odjava korisnika 'Pera Perić'
+14.02.2020 09:11:10 - Pogrešni podaci: 'ivanic' i 'iivanic'
+14.02.2020 09:11:16 - Uspešno logovanje za korisnika iivanic
+14.02.2020 09:11:24 - Odjava korisnika 'Ivan Ivanić'
+14.02.2020 09:11:30 - Uspešno logovanje za korisnika mmilic
+14.02.2020 09:11:40 - Odjava korisnika 'Mile Milić'
+14.02.2020 09:11:46 - Uspešno logovanje za korisnika pperic
+14.02.2020 09:13:08 - Odjava korisnika 'Pera Perić'
+14.02.2020 09:13:14 - Uspešno logovanje za korisnika mmilic
+14.02.2020 09:13:58 - Odjava korisnika 'Mile Milić'
+14.02.2020 09:14:04 - Uspešno logovanje za korisnika pperic
+14.02.2020 09:17:06 - Odjava korisnika 'Pera Perić'
+14.02.2020 09:17:18 - Uspešno logovanje za korisnika jjovic
+14.02.2020 09:17:27 - Odjava korisnika 'Jovan Jović'
+14.02.2020 09:17:34 - Uspešno logovanje za korisnika pperic
+
+
+//prijavakanala.txt
+14.02.2020 09:17:20 - <b>Neuspešna</b> prijava kanala '24 Kitchen' za korisnika Jovan Jović - <b>Već prijavljen</b>
+14.02.2020 09:17:22 - <b>Neuspešna</b> prijava kanala 'Arena Sport' za korisnika Jovan Jović - <b>Već prijavljen</b>
+14.02.2020 09:17:24 - <b>Neuspešna</b> prijava kanala 'HBO HD' za korisnika Jovan Jović - <b>Već prijavljen</b>
+
+
+//funkcije.php
+<?php
+function login(){
+    if(isset($_SESSION['id']) AND isset($_SESSION['ime']) AND isset($_SESSION['status']) )
+        return true;
+    else
+        return false;
+}
+function odjaviKorisnika(){
+    session_unset();
+    session_destroy();
+}
+
+function prikaziPodatke(){
+    echo "<div class='podaciPrijava'>";
+    echo "Prijavljeni ste kao {$_SESSION['ime']} ({$_SESSION['status']})<br>";
+    echo "<a href='index.php'>Početna</a> | ";
+    if($_SESSION['status']=='Administrator') echo "<a href='admin.php'>Administracija</a> | ";
+    echo "<a href='index.php?odjava'>Odjava</a>";
+    echo "</div>";
+}
+
+
+?>
+
+//style.css
+body{
+    font-family: Arial, Helvetica, sans-serif;
+}
+.podaciPrijava{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+}
+.prikazKanala{
+    border: 1px solid darkgray;
+    background-color: lightgray;
+    display: inline-block;
+    width: 300px;
+    margin: 5px;
+    padding: 5px;
+    text-align: center;
+}
+.dugme{
+    background-color: lightgreen;
+    cursor: pointer;
+    margin: 5px;
+    padding: 5px;
+}
+.dugme:hover{
+    background-color: lightskyblue;
+    cursor: pointer;
+    
+}
+.dugme:active{
+    background-color: rgb(37, 37, 94);
+    cursor: pointer;
+    color: white;
+}
+.opcija{
+    border: 1px solid black;
+    background-color: aqua;
+    margin: 2px;
+    padding: 5px;
+    width: 500px;
+    display:inline-block;
+}
+div{
+    vertical-align: text-top;
+}
+
+//ajax_admin.php
+<?php
+session_start();
+require_once("../klase/classBaza.php");
+require_once("../klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Baza trenutno nije dostupna!!!!";
+    exit();
+}
+$funkcija=$_GET['funkcija'];
+if($funkcija=="log")
+{
+    $fajl=$_POST['fajl'];
+    if(file_exists("../logovi/".$fajl))
+    {
+        $odgovor=file_get_contents("../logovi/".$fajl);
+        $odgovor=str_replace("\r\n", "<br>", $odgovor);
+        echo $odgovor;
+    }
+    else
+        echo "Fajl ne postoji!!!!";
+    
+}
+
+if($funkcija=="kanaliBroj")
+{
+    $id=$_POST['id'];
+    $upit="SELECT * FROM kanalikorisnici WHERE idKanala=$id";
+    $rez=$db->query($upit);
+    echo "Broj prijavljenih: <b>".$db->num_rows($rez)."</b>";
+}
+
+if($funkcija=="popuniSelect")
+{
+    $upit="SELECT * FROM kanali";
+    $rez=$db->query($upit);
+    $sve=$db->fetch_all($rez);
+    echo JSON_encode($sve, 256);
+}
+
+if($funkcija=="brisanje")
+{
+    $id=$_POST['id'];
+    $upit="DELETE FROM kanalikorisnici WHERE idKanala=$id";
+    $db->query($upit);
+    $upit="DELETE FROM kanali WHERE id=$id";
+    $db->query($upit);
+    if($db->affected_rows()==1)
+        echo "Uspešno izbrisan kanal";  
+    else
+        echo "Greška prilikom brisanja kanala<br>".$db->error();
+}
+
+if($funkcija=="kanal")
+{
+    $id=$_POST['id'];
+    $naziv=$_POST['naziv'];
+    $datum=$_POST['opis'];
+    $cena=$_POST['cena'];
+    if($id=="")
+        $upit="INSERT INTO predmeti (naziv, datum, nacinpolaganja, idProfesora) VALUES ('{$naziv}', '{$datum}', {$nacinpolaganja}, {$_SESSION['id']})";
+    else
+        $upit="UPDATE predmeti SET naziv='{$naziv}', datum='{$datum}', nacinpolaganja={$nacinpolaganja} WHERE id=$id";
+    $db->query($upit);
+    if($db->error())
+        echo "GREŠKA<br>".$db->error();
+    else if($id=="")
+        echo "Uspešno snimljeni podaci";
+        else echo "Uspešno izmenjeni podaci";
+
+}
+
+if($funkcija=="prikaziKanal")
+{
+    $id=$_POST['id'];
+    $upit="SELECT * FROM kanali WHERE id=$id";
+    $rez=$db->query($upit);
+    $sve=$db->fetch_all($rez);
+    if(file_exists("../slike/$id.jpg"))$slika="slike/$id.jpg";
+    else $slika="slike/noimage.jpg";
+    $sve[0]['prikazSlike']="<img src='$slika' alt='' width='200px'/>";
+    echo JSON_encode($sve, 256);
+}
+
+
+//ajax_index.php
+<?php
+session_start();
+require_once("../klase/classBaza.php");
+require_once("../klase/classLog.php");
+$db=new Baza();
+if(!$db->connect())
+{
+    echo "Baza trenutno nije dostupna!!!!";
+    exit();
+}
+$funkcija=$_GET['funkcija'];
+if($funkcija=="prijava")
+{
+    if(isset($_POST['korime']) and isset($_POST['lozinka']))
+    {
+        $korime=$_POST['korime'];
+        $lozinka=$_POST['lozinka'];
+        if($korime=="" or $lozinka=="")
+        {
+            echo "Svi podaci su obavezni";
+            exit();
+        }
+        
+        $upit="SELECT * FROM korisnici WHERE korime='{$korime}'";
+        $rez=$db->query($upit);
+        if($db->num_rows($rez)==0)
+        {
+            echo "Ne postoji korisnik sa korisničkim imenom <b>'{$korime}'</b>";
+            Log::upisiLog("../logovi/logovanje.txt", "Pogrešni podaci: '{$korime}' i '{$lozinka}'");
+            exit();
+        }
+        $red=$db->fetch_object($rez);
+        if($red->lozinka!=$lozinka)
+        {
+            echo "Pogrešna lozinka za korisnika <b>'{$korime}'</b>";
+            Log::upisiLog("../logovi/logovanje.txt", "Pogrešni podaci: '{$korime}' i '{$lozinka}'");
+            exit();
+        }
+        $_SESSION['id']=$red->id;
+        $_SESSION['ime']="$red->ime $red->prezime";
+        $_SESSION['status']=$red->status;
+        Log::upisiLog("../logovi/logovanje.txt", "Uspešno logovanje za korisnika {$korime}");
+        echo "1";
+    }
+}
+if($funkcija=="prijavaKanala")
+{
+    if(isset($_POST['id']))
+    {
+        $idKanala=$_POST['id'];
+        $upit="SELECT * FROM kanali WHERE id={$idKanala}";
+        $rez=$db->query($upit);
+        $red=$db->fetch_object($rez);
+        $imeKanala=$red->naziv;
+        $upit="SELECT * FROM kanalikorisnici WHERE idKorisnika={$_SESSION['id']} AND idKanala={$idKanala}";
+        $rez=$db->query($upit);
+        if($db->num_rows($rez)>0)
+        {
+            Log::upisiLog("../logovi/prijavakanala.txt", "<b>Neuspešna</b> prijava kanala '$imeKanala' za korisnika {$_SESSION['ime']} - <b>Već prijavljen</b>");
+            echo "Ovaj kanal je već prijavljen";
+            exit();
+        }
+        $upit="SELECT * FROM kanali WHERE id={$idKanala}";
+        $rez=$db->query($upit);
+        $red=$db->fetch_object($rez);
+        $imeKanala=$red->naziv;
+        $upit="INSERT INTO kanalikorisnici (idKorisnika, idKanala ) VALUES ({$_SESSION['id']}, {$idKanala})";
+        $db->query($upit);
+        if($db->error())
+        {
+            Log::upisiLog("../logovi/prijavakanala.txt", "Neuspešna prijava kanala '$imeKanala' za korisnika {$_SESSION['ime']} - ".$db->error());
+            echo "Neuspešna prijava kanala\n".$db->error();
+        }
+        else
+        {
+            Log::upisiLog("../logovi/prijavakanala.txt", "Uspešna prijava kanala '$imeKanala' za korisnika {$_SESSION['ime']}");
+            echo "1";
+        }
+           
+    }
+}
+
+?>
+
+
+//admin.js
+$(document).ready(function(){
+    popuniSelect();
+    $("#log").change(function(){
+        let fajl=$(this).val();
+        if(fajl=="0")
+        {
+            $("#divlogovi").html("");
+            return false;
+        }
+        $.post("ajax/ajax_admin.php?funkcija=log",{fajl:fajl}, function(response){
+            $("#divlogovi").html(response);
+        })
+    })
+    $("#kanaliBroj").change(function(){
+        let id=$(this).val();
+        if(id=="0")
+        {
+            $("#divBroj").html("");
+            return false;
+        }
+        $.post("ajax/ajax_admin.php?funkcija=kanaliBroj",{id:id}, function(response){
+            $("#divBroj").html(response);
+        })
+    })
+
+    $("#brisanje").click(function(){
+        let id=$("#kanal").val();
+        if(id=="0")
+        {
+            $("#divKanali").html("Niste izabrali kanal za brisanje");
+            return false;
+        }
+        if(!confirm("Da li ste sigurni da želite da izbrišete kanal?")) return false;
+        
+        $.post("ajax/ajax_admin.php?funkcija=brisanje", {id:id}, function(response){
+            $("#divKanali").html(response);
+            popuniSelect();
+            ocistiPredmet();
+        })
+    })
+
+    
+
+    $("#kanal").change(function(){
+        let id=$(this).val();
+        if(id=="0")
+        {
+            ocistiKanal();
+            return false;
+        }
+        $.post("ajax/ajax_admin.php?funkcija=prikaziKanal", {id:id}, function(response){
+            let kanal=JSON.parse(response);
+            $("#id").val(kanal[0].id);
+            $("#naziv").val(kanal[0].naziv);
+            $("#opis").val(kanal[0].opis);
+            $("#cena").val(kanal[0].cena);
+            $("#prikazSlike").html(kanal[0].prikazSlike);
+            $("#divKanali").html("");
+        })
+    })
+})
+
+function popuniSelect()
+{
+    let kanal=$("#kanal");
+    let broj=$("#kanaliBroj");
+    $.post("ajax/ajax_admin.php?funkcija=popuniSelect", function(response){
+        let kanali=JSON.parse(response);
+        kanal.empty();
+        kanal.append("<option value='0'>--izaberite kanal--</option>");
+        broj.empty();
+        broj.append("<option value='0'>--izaberite kanal--</option>");
+        for(let i=0;i<kanali.length;i++)
+        {
+            broj.append("<option value='"+ kanali[i].id +"'>"+ kanali[i].naziv +"</option>");
+            kanal.append("<option value='"+ kanali[i].id +"'>"+ kanali[i].naziv +"</option>");
+        }
+    })
+}
+
+function ocistiKanal(){
+    $("input").val("");
+    $("#kanal").val("0");
+    $("#slika").val("");
+    $("#prikazSlike").html("");
+    $("#opis").val("");
+}
+
+
+//index.js
+$(document).ready(function(){
+    $("#dugmeZaPrijavu").click(function(){
+        let korime=$("#korime").val();
+        let lozinka=$("#lozinka").val();
+        if(korime=="" || lozinka=="")
+        {
+            $("#odgovor").html("Svi podaci su obavezni");
+            return false;
+        }
+        $.post("ajax/ajax_index.php?funkcija=prijava", {korime: korime, lozinka:lozinka}, function(response){
+            if(response=="1") document.location.assign("index.php");
+            else $("#odgovor").html(response);
+        })
+    })
+})
+
+function prijaviKanal(idKanala)
+{
+    $.post("ajax/ajax_index.php?funkcija=prijavaKanala", {id: idKanala}, function(response){
+        if(response=="1") document.location.assign("index.php");
+        else alert(response);
+    })
+}
+
+
+//jquery-3.4.1.js
+
+
+//classBaza.php
+<?php
+class Baza{
+    private $server="localhost";
+    private $username="root";
+    private $password="";
+    private $database="pva_februar2020";
+    private $db;
+
+    public function connect(){
+        $this->db=@mysqli_connect($this->server, $this->username, $this->password, $this->database);
+        if(!$this->db)
+            return false;
+        $this->query("SET NAMES UTF8");
+        return $this->db;
+    }
+
+    public function query($sql){
+        return mysqli_query($this->db, $sql);
+    }
+
+    public function num_rows($rez){
+        return mysqli_num_rows($rez);
+    }
+
+    public function fetch_object($rez){
+        return mysqli_fetch_object($rez);
+    }
+
+    public function fetch_assoc($rez){
+        return mysqli_fetch_assoc($rez);
+    }
+
+    public function affected_rows(){
+        return mysqli_affected_rows($this->db);
+    }
+
+    public function error(){
+        return mysqli_error($this->db);
+    }
+
+    public function insert_id(){
+        return mysqli_insert_id($this->db);
+    }
+
+    public function fetch_all($rez){
+        return mysqli_fetch_all($rez, MYSQLI_ASSOC);
+    }
+}
+?>
+
+
+//classLog.php
+<?php
+class Log{
+    public static function upisiLog($imeDatoteke, $stringZaUpis){
+        $stringZaUpis=date("d.m.Y H:i:s", time())." - $stringZaUpis\r\n";
+        $f=fopen($imeDatoteke, "a");
+        fwrite($f, $stringZaUpis);
+        fclose($f);
+    }
+}
+?>
