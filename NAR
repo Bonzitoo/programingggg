@@ -1,0 +1,500 @@
+/////VEZBA 3
+
+
+ORG 0x40000000 ;Pocetna adresa RAM memorije 
+        A: DCD 0x12345678 
+        B: DCD -0x12345678 
+        C: DCW 0x5555 
+        D: DCW -0x5555 
+        E: DCB 0x01 
+        F: DCB -0x01 
+        G: DCB 0 
+        H: DCB 128 
+        
+        NAME    main
+        
+        PUBLIC  main
+        
+        COMMON  INTVEC:CODE
+        CODE32
+
+
+        B       main
+
+        
+        RSEG    ICODE:CODE
+        
+        CODE32
+
+main    NOP
+        
+          LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+          LDR r1,[r0] ;Punjenje registra r1 indirektno 
+          MOVS r2,r1 ;Punjenje registra r2 sadrzajem registra r1 sa uticajem na zastavice 
+          MVNS r2,r1 ;Punjenje registra r2 invertovanim sadrzajem registra r1 sa uticajem na zastavice 
+  
+         ;RAD SA 32-BITNIM RECIMA
+  
+          LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+          LDR r1,[r0] ;Punjenje registra r1 indirektno 32-bitnom recju 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1
+          MOVS r3,r1  
+          MVNS r3,r1 
+           
+          LDR r0,=G ;Punjenje registra r0 adresom podatka na simbolickoj adresi G 
+          LDR r1,[r0] ;Punjenje registra r1 indirektno 32-bitnom recju 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          LDR r0,=B ;Punjenje registra r0 adresom podatka na simbolickoj adresi B
+          LDR r1,[r0] ;Punjenje registra r1 indirektno 32-bitnom recju
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          MOVS r4,r1  
+          MVNS r4,r1 
+
+          ;RAD SA 16-BITNIM RECIMA 
+  
+          LDR r0,=C ;Punjenje registra r0 adresom podatka na simbolickoj adresi C 
+          LDRH r1,[r0] ;Punjenje registra r1 indirektno 16-bitnom recju 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          LDRSH r1,[r0] ;Punjenje registra r1 indirektno 16-bitnom recju u oznacenoj aritmetici
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          MOVS r5,r1  
+          MVNS r5,r1 
+
+          LDR r0,=D ;Punjenje registra r0 adresom podatka na simbolickoj adresi D 
+          LDRH r1,[r0] ;Punjenje registra r1 indirektno 16-bitnom recju u neoznacenoj aritmetici
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          LDRSH r1,[r0] ;Punjenje registra r1 indirektno 16-bitnom recju u oznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          MOVS r6,r1  
+          MVNS r6,r1 
+
+          ;RAD SA 8-BITNIM RECIMA
+  
+          LDR r0,=E ;Punjenje registra r0 adresom podatka na simbolickoj adresi E
+          LDRB r1,[r0] ;Punjenje registra r1 indirektno 8-bitnom recju u neoznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1
+          MOVS r7,r1  
+          MVNS r7,r1 
+
+          
+          LDR r0,=F ;Punjenje registra r0 adresom podatka na simbolickoj adresi F
+          LDRB r1,[r0] ;Punjenje registra r1 indirektno 8-bitnom recju u neoznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          LDRSB r1,[r0] ;Punjenje registra r1 indirektno 8-bitnom recju u oznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1
+          MOVS r8,r1  
+          MVNS r8,r1 
+
+          LDR r0,=H ;Punjenje registra r0 adresom podatka na simbolickoj adresi H
+          LDRB r1,[r0] ;Punjenje registra r1 indirektno 8-bitnom recju u neoznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1 
+          LDRSB r1,[r0] ;Punjenje registra r1 indirektno 8-bitnom recju u oznacenoj aritmetici 
+          TST r1,r1 ;Postavljanje zastavica u funkciji sadrzaja registar r1
+          MOVS r9,r1  
+          MVNS r9,r1 
+
+        
+  B main
+
+  END     main
+  
+  
+  
+  
+  
+  
+  //////VEZBA 4
+  
+  
+  
+  ;OPCIJA ENDIAN MODE POSTAVLJENA NA Big
+			
+		ORG 0x40000000 
+		 
+		;Pocetna adresa RAM memorije
+A DCD 0x01234567 
+B DCD 0x89ABCDEF
+C DCD 0x0
+D DCD 0xFFFFFFFF
+POM DCD 0x0
+REZ DCD 0
+		 
+		NAME main
+		 
+		 
+		PUBLIC main 
+		 
+		COMMON INTVEC:CODE
+		 
+		CODE32
+		 
+		B main
+		 
+		RSEG ICODE:CODE
+		 
+		CODE32
+main NOP
+		 
+		LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+		 
+		LDRB r1,[r0] ;Punjenje registra r1 indirektno bajtom najvece tezine podatka A (na adresi 0x40000000) ne menja sadrzaja r0 
+		 
+		LDRB r2,[r0,#1] ;Punjenje registra r1 indirektno drugim bajtom podatka A (na adresi 0x40000000+1) i ne menja sadrzaja r0
+		 
+		LDRB r3,[r0,#2] ;Punjenje registra r1 indirektno trecim bajtom podatka A (na adresi 0x40000000+2) i une menja sadrzaja r0
+		 
+		LDRB r4,[r0,#3] ;Punjenje registra r1 indirektno bajtom najmanje tezine podatka A (na adresi 0x40000000+3) i ne menja sadrzaja r0
+		 
+		 
+		LDR r0,=REZ ;Punjenje registra r0 adresom podatka na simbolickoj adresi REZ (prvi bajt-najvece težine posle podatka sa simbolickim imenom POM)
+		 
+		STRB r1,[r0,#-4] ;Smestanje registra r1 na bajt najvece tezine lokacije POM (na adresi 0x40000010=0x40000014-4), ne menja sadrzaja r0 
+		 
+		STRB r2, [r0,#-3] ;Smstanje registra r2 na sledeci bajt lokacije POM (na adresi 0x40000011=0x40000014-3), ne menja sadrzaja r0
+		 
+		STRB r3, [r0,#-2] ;Smestanje registra r3 na na sledeci bajt lokacije POM (na adresi 0x40000012=0x40000014-2), ne menja sadrzaja r0
+		 
+		STRB r4, [r0,#-1] ;Smestanje registra r4 na bajt najmanje tezine lokacije POM (na adresi 0x40000013=0x40000014-1), ne menja sadrzaja r0 
+		 
+		MOV r1,#0 ;Punjenje registara od r1 do r4 vrednoscu 0
+		 
+		MOV r2,#0
+		 
+		MOV r3,#0
+		 
+		MOV r4,#0 
+		 
+		 
+		LDRB r1,[r0],#1 ;Punjenje registra r1 postindeksirano bajtom najvece tezine podatka A (na adresi 0x40000000) i uvecanje sadrzaja r0 za 1
+		 
+		LDRB r2,[r0],#1 ;Punjenje registra r1 postindeksirano drugim bajtom podatka A (na adresi 0x40000001) i uvecanje sadrzaja r0 za 1
+	 
+		LDRB r3,[r0],#1 ;Punjenje registra r1 postindeksirano trecim bajtom podatka A (na adresi 0x40000002) i uvecanje sadrzaja r0 za 1
+		 
+		LDRB r4,[r0],#1 ;Punjenje registra r1 postindeksirano bajtom najmanje tezine podatka A (na adresi 0x40000003) i uvecanje sadrzaja r0 za 1
+
+		LDR r0,=REZ ;Punjenje registra r0 adresom podatka na simbolickoj adresi REZ 
+		 
+		STRB r1,[r0],#1 ;Smestanje registra r1 postindeksirano na bajt najvece tezine podatka REZ (na adresi 0x40000014) i uvecanje sadrzaja r0 za 1
+		 
+		STRB r2,[r0],#1 ;Smestanje registra r2 postindeksirano na drugi bajt podatka REZ (na adresi 0x40000015) i uvecanje sadrzaja r0 za 1
+		 
+		STRB r3,[r0],#1 ;Smestanje registra r3 postindeksirano na treci bajt podatka REZ (na adresi 0x40000016) i uvecanje sadrzaja r0 za 1
+		 
+		 
+		STRB r4,[r0] ;Smestanje registra r4 postindeksirano na bajt najmanje tezine podatka REZ (na adresi 0x40000017) 
+		 
+		MOV r1,#0 ;Punjenje registara od r1 do r4 vrednoscu 0
+		 
+		MOV r2,#0
+		 
+		MOV r3,#0
+		 
+		MOV r4,#0 
+		 
+		 
+		 
+		LDR r0,=A 
+		 
+		;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+		 
+		LDRB r1,[r0] ;Punjenje registra r1 indirektno bajtom najvece tezine podatka A (na adresi 0x40000000) 
+		 
+		LDRB r2,[r0,#1]! ;Uvecanje sadrzaja r0 za 1 (na 0x40000001) i punjenje registra r1 postindeksirano drugim bajtom podatka A
+		 
+		LDRB r3,[r0,#1]! ;Uvecanje sadrzaja r0 za 1 (na 0x40000002) i punjenje registra r1 postindeksirano drugim bajtom podatka A
+		 
+		LDRB r4,[r0,#1]! ;Uvecanje sadrzaja r0 za 1 (na 0x40000003) i punjenje registra r1 postindeksirano drugim bajtom podatka A 
+		 
+		 
+		LDR r0,=REZ ;Punjenje registra r0 adresom podatka na simbolickoj adresi REZ (0x40000014)
+		 
+		STRB r1,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000013, na ovoj adresi je bajt najmanje tezine lokacije POM) i punjenje bajta najmanje tezine podatka POM (na adresi 0x40000013) sadrzajem registra r1
+		 
+		STRB r2,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000012) i smestanje registra r2 postindeksirano na drugi bajt podatka POM
+		 
+		STRB r3,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000011) i smestanje registra r3 postindeksirano na treci bajt podatka POM
+		 
+		STRB r4,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000011) i smestanje registra r4 postindeksirano na bajt najmanje tezine podatka POM 
+		 
+		LDR r0,=REZ ;Punjenje registra r0 adresom podatka na simbolickoj adresi REZ (0x40000014)
+		 
+		STRB r4,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (r0 je 0x40000013, na ovoj adresi je bajt najmanje tezine lokacije POM) i punjenje bajta najmanje tezine podatka POM (na adresi 0x40000013) sadrzajem registra r4
+		 
+		STRB r3,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000012) i smestanje registra r3 postindeksirano na drugi bajt podatka POM
+		 
+		STRB r2,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000011) i smestanje registra r2 postindeksirano na treci bajt podatka POM
+		 
+		STRB r1,[r0,#-1]! ;Smanjenje sadrzaja r0 za 1 (na 0x40000010) i smestanje registra r1 postindeksirano na bajt najmanje tezine podatka POM
+		 
+		LDR r0,=POM ;Punjenje registra r0 adresom podatka na simbolickoj adresi POM
+		 
+		STR r5,[r0] ;Upisivanje 0 na lokaciju POM (brisanje) 
+		 
+		TST r1,r1 ;Postavljanje zastavica u zavisnosti od sadrzaja registra r1(Z=0)
+		 
+		STRBNE r1,[r0] ;Smestanje sadrzaja registra r1 na simbolicku adresu POM ako je r1 razlicito od 0(izvršice se jer je r0 razlicito od 0)
+		 
+		MOV r1,#0 ;Punjenje registara r1 vrednoscu 0
+		 
+		STRBNE r3,[r0] ;Smestanje registra r3 na simbolicku adresu POM ako je r1 razlicito od 0 (greskom se izvrsilo, ostala zastavica)
+		 
+		TST r1,r1
+		 
+		;Postavljanje zastavica u zavisnosti od sadrzaja registra r1
+		 
+		STRBNE r1,[r0] ;Smestanje registra r1 na simbolicku adresu POM ako je r1 razlicito od 0(nece se izvršiti)
+		 
+		LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+		 
+		LDMIA r0,{r1-r4} ;Punjenje registara od r1 do r4 sa simbolickih adresa A,B,C i D
+		LDR r0,=POM ;Punjenje registra r0 adresom podatka na simbolickoj adresi POM
+		 
+		STMIA r0,{r1-r4} ;Smestanje registara od r1 do r4 na uzastopne memorijske adrese pocevsi od simbolicke adrese POM
+		 
+		MOV r1,#0 ;Punjenje registara od r1 do r4 vrednoscu 0
+		 
+		MOV r2,#0
+		 
+		MOV r3,#0
+		 
+		MOV r4,#0 
+		 
+		LDR r0,=POM ;Punjenje registra r0 adresom podatka na simbolickoj adresi POM
+		 
+		STMIA r0,{r1-r4} ;Smestanje sadržaja registara od r1 do r4 na uzastopne memorijske adrese pocevsi od simbolicke adrese POM (Store multiple), brisanje podataka u memoriji
+		 
+		 
+		 
+		LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A 
+		 
+		LDR r1,[r0] ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+		 
+		LDMIB r0,{r2-r4} ;Punjenje registara od r1 do r4 sa simbolickih adresa B,C i D (adresa se najpre uveca za 4 pa se prenese podatak)
+		 
+		LDR r0,=POM ;Punjenje registra r0 adresom podatka na simbolickoj adresi POM
+		 
+		STR r1, [r0] ;Smestanje r1 na lokaciju POM
+		 
+		STMIB r0,{r2-r4} ;Smestanje registara od r2 do r4 na uzastopne memorijske adrese pocevsi od simbolicke adrese POM (Store multiple)
+		 
+PET LDR SP,=0x40000030 
+		 
+		;Postavljanje pokazivaca steka na vrednost 0x40000030
+		 
+		PUSH {r1-r4} ;Smestanje registara od r1 do r4 na stek
+		 
+		MOV r1,#0 ;Punjenje registara od r1 do r4 vrednoscu 0, uništavanje prethodnog sadržaja
+		 
+		MOV r2,#0
+		 
+		MOV r3,#0
+		 
+		MOV r4,#0 
+		 
+		POP {r1-r4} ;Punjenje registara r1-r4 sa steka, vracanje prethodnog sadržaja 
+		 
+		 
+		MOV r1,#8
+		 
+		;Punjenje registara od r1 do r4 brojevima 8, 8, 10 i 16 respektivno
+		 
+		MOV r2,#0x8
+		 
+		MOV r3,#10
+		 
+		MOV r4,#0x10
+		 
+		LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A i uvecanje sadrzaja r0 za 4
+		 
+		LDR r5,[r0],#4 ;Punjenje registra r5 indirektno 32 bitnim podatkom sa adrese 0x40000000, broj A i uvecanje sadrzaja r0 za 4
+		 
+		LDR r6,[r0],#4 ;Punjenje registra r6 indirektno sledecim 32 bitnim podatkom broj B i uvecanje sadrzaja r0 za 4 
+		 
+		LDR r7,[r0],#4 ;Punjenje registra r7 indirektno sledecim 32 bitnim podatkom broj C i uvecanje sadrzaja r0 za 4
+		 
+		LDR r8,[r0] ;Punjenje registra r8 indirektno sledecim 32 bitnim podatkom broj D 
+		 
+		PUSH {r1-r8} ;Smestanje registara od r1 do r8 na stek, prepunjenje steak i uništavanje podataka u memorijina lokacijama 0x40000010-0x400001F
+		 
+		LDR r0,=PET ;Punjenje registra r0 adresom labele PET
+		 
+		MOV PC,r0 ;Punjenje programskog brojaca vrednoscu registra r0
+		 
+		 
+		
+		 
+		 
+	B main
+		 
+	END main
+  
+  
+  
+  
+  
+  //////////VEZBA5
+  
+  
+  
+  ORG 0x40000000 ;Pocetna adresa RAM memorije
+  
+A DS32 1 ;Rezervacija 32 bitne memorijske lokacije sasimbolickom adresom A
+B DS32 1 ;Rezervacija 32 bitne memorijske lokacije sa simbolickom adresom B
+C DS32 1 ;Rezervacija 32 bitne memorijske lokacije sa simbolickom adresom C
+D DCD 0x5 ;32 bitna konstanta cija je vrednost dekadno 5
+OP1H DCD 0x11111111
+OP1L DCD 0x88888888
+OP2H DCD 0x22222222
+OP2L DCD 0x99999999
+REZH DS32 1 ;Rezervacija 32 bitne memorijske lokacije sa simbolickom adresom REZH
+REZL DS32 3 ;Rezervacija tri 32 bitne memorijske lokacije sa simbolickom adresom REZL
+	 
+	NAME main 
+	 
+	PUBLIC main 
+	 
+	COMMON INTVEC:CODE
+	 
+	CODE32
+	 
+	B main
+	 
+	RSEG ICODE:CODE
+	 
+	CODE32
+main NOP
+	;Program za izracunavanje REZL := A + B
+	 
+	LDR r0,=A ;Punjenje registra r0 adresom podatka na simbolickoj adresi A
+	 
+	LDR r1,=B ;Punjenje registra r1 adresom podatka na simbolickoj adresi B
+	 
+	LDR r2,=C ;Punjenje registra r1 adresom podatka na simbolickoj adresi C
+	 
+	LDR r4, =-2 ;Punjenje registra r4 dekadnim brojem -2
+	 
+	STR R4,[r0] ;Smestanje sadrzaja registra r4 na memorijsku adresu na koju pokazuje r0 (A)
+	 
+	LDR r4, =-3 ;Punjenje registra r4 dekadnim brojem -3
+	 
+	STR R4,[r1] ;Smestanje sadrzaja registra r4 na memorijsku adresu na koju pokazuje r1 (B) 
+	 
+	LDR r4, =0xFFFFFFFF ;Punjenje registra r4 heksa brojem FFFFFFFF
+	 
+	STR R4,[r0, #8] ;Smestanje sadrzaja registra r4 na memorijsku adresu na koju pokazuje r0+8 (C) 
+	 
+	LDR r2,[r0] ;Punjenje registra r2 indirektno sadrzajem memorijske lokacije A
+	 
+	LDR r3,[r1] ;Punjenje registra r3 indirektno sadrzajem memorijske lokacije B
+	 
+	ADDS r4,r2,r3 ;Sabiranje sadrzaja registara r2 i r3 i smestanje rezultata na registar r4 
+	 
+	LDR r5,=REZL
+	 
+	STR r4,[r5] 
+	 
+	MOV r1, #2
+	 
+	ADDS r1, r1, r1 ;Brisanje zastavica N i C
+	 
+	LDR r0,=C ;Punjenje registra r0 adresom podatka na simbolickoj adresi C
+	 
+	LDR r1,=D ;Punjenje registra r1 adresom podatka na simbolickoj adresi D
+	 
+	LDR r7,[r0] ;Punjenje registra r2 indirektno sadrzajem memorijske lokacije C
+	 
+	LDR r8,[r1] ;Punjenje registra r3 indirektno sadrzajem memorijske lokacije D
+	 
+	 
+	ADD r6,r7,r8 ;Sabiranje sadrzaja registara r2 i r3 i smestanje rezultata na registar r4 
+	 
+	 
+	ADDS r5,r7,r8 ;Sabiranje sadrzaja registara r2 i r3 i smestanje rezultata na registar r5 i osvezavanje zastavica
+	
+        ; Algoritam za 64-bitno sabiranje: REZH_REZL=OP1H_OP1L + OP2H_OP2L
+	 
+	LDR r0,=OP1H 
+	 
+	LDMIA r0,{r1-r4}
+	 
+	ADDS r5,r2,r4 
+	 
+	 
+	;Sabiranje nizih reci sa postavljanjem zastavica
+	 
+	ADC r6,r1,r3 
+	 
+	;Sabiranje visih reci i sa bitom prenosa
+	 
+	LDR r0,=REZH ;Smestanje adrese rezultata u registar r0
+
+	STR r6,[r0] 
+	 
+	;Smestanje gornja 32-bita rezultata preindeksno
+	 
+	STR r5,[r0,#4] 
+	 
+	;Smestanje donja 32-bita rezultata preindeksno 
+	; Program za izracunavanje REZL := -A 
+	
+        ;VARIJANTA 1
+	 
+	LDR r0,=A
+	 
+	LDR r1,=REZL
+	 
+	LDR r2,[r0]
+	 
+	MVN r4,r2
+	 
+	ADD r4,r4,#1
+	 
+	STR r4,[r1] 
+	
+        ;VARIJANTA 2
+	 
+	MOV r3,#-1
+	 
+	MUL r5,r2,r3
+	 
+	STR r5,[r1, #4]
+	
+        ;VARIJANTA 3
+	 
+	MOV r5,#0
+	 
+	SUB r5, r5, r2
+	 
+	STR r5,[r1, #6] ;Kod ovog simulatora adresa ne mora biti deljiva sa dužinom podatka
+	 
+	RSB r6, r2, #0
+	 
+	STR r6,[r1, #8]
+	
+        ;Pomnoziti OP1H i OP2H u neoznacenoj aritmetici sa 64 bitnim rezultatom
+	 
+	LDR r0,=OP1H 
+	 
+	LDR r1, [r0]
+	 
+	LDR r0,=OP2H 
+	 
+	LDR r2, [r0]
+	 
+	UMULL r5,r6,r1,r2
+	
+        ;Napisati programski kod za izracunavanje REZH:= (OP1H x 3 +OP1H) množenje sa akumulacijom
+	 
+	MOV r2,#3
+        
+	MLA r4, r1, r2, r1 ; Mnozenje sa akomulacijom
+	 
+	LDR r5,=REZH
+	 
+	STR r4,[r5]
+	 
+	 
+	B main
+	 
+	END main
